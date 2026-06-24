@@ -11,9 +11,9 @@ Go SDK for the [WorkTool WeChat Enterprise API](https://worktool.apifox.cn/).
 - ✅ 好友管理：按手机号添加、从群添加、修改、删除、修改群成员备注
 - ✅ 消息生命周期：撤回、插队、批量、清空、清空指定
 - ✅ 切换企业、清理存储、添加待办
-- ✅ 机器人配置：信息、在线状态、加密、回调（旧/新）、登录日志、企业列表
-- ✅ 历史记录：原始消息、QA 日志、回调日志
-- ✅ AES-256-CBC 解密回调（自动）
+- ✅ 机器人配置：信息、在线状态、回调、登录日志、企业列表
+- ✅ 历史记录：原始消息、指令回调日志
+- ✅ 回调：`callback` 包统一处理 QA 消息回调与事件回调（明文 JSON）
 - ✅ 请求参数校验（Validate）
 - ✅ **Client 无状态**：每次请求构建独立 HTTPClient，多 goroutine 并发安全
 
@@ -48,9 +48,7 @@ func main() {
     }
     fmt.Printf("code=%d, message=%s\n", resp.Code, resp.Message)
 
-    // 带加密
-    c2 := worktool.NewClientWithSecret("robot_id", "16bytekey1234567", 1)
-    info, _ := c2.Robot.GetInfo()
+    info, _ := c.Robot.GetInfo()
     fmt.Println(info.Data.Name)
 }
 ```
@@ -220,22 +218,29 @@ c.Message.BatchSend(&types.BatchSendRequest{
 // 基础
 c.Robot.GetInfo()
 c.Robot.IsOnline()
-c.Robot.SetEncryption(&types.SetEncryptionRequest{SecretKey: "k", EncryptType: 1})
 
-// 消息回调
-c.Robot.SetCallback(&types.SetCallbackRequest{
+// QA 消息回调（用户发消息 → 你的服务回复）
+c.Robot.SetQACallback(&types.SetQACallbackRequest{
     OpenCallback: 1,
-    CallbackURL:  "https://your-server.com/cb",
+    CallbackURL:  "https://your-server.com/qa",
     ReplyAll:     "1",
 })
 
-// 事件回调（新）
-c.Robot.BindCallback(&types.BindCallbackRequest{
-    Type:        callback.CallbackTypeCommandExec,
-    CallBackURL: "https://your-server.com/exec",
+// 事件回调（指令结果、群二维码、上下线等）
+c.Robot.SetEventCallback(&types.SetEventCallbackRequest{
+    Type:        types.EventCallbackTypeCommandExec,
+    CallBackURL: "https://your-server.com/event",
 })
-c.Robot.ListCallbacks(&types.ListCallbacksRequest{})
-c.Robot.DeleteCallback(&types.DeleteCallbackRequest{Type: 1})
+c.Robot.ListEventCallbacks(&types.ListEventCallbacksRequest{})
+c.Robot.DeleteEventCallback(&types.DeleteEventCallbackRequest{
+    Type: types.EventCallbackTypeCommandExec,
+})
+
+// 其它事件类型示例
+c.Robot.SetEventCallback(&types.SetEventCallbackRequest{
+    Type:        types.EventCallbackTypeOnline,
+    CallBackURL: "https://your-server.com/online",
+})
 
 // 登录日志 / 企业列表
 c.Robot.GetLoginLogs(&types.GetLoginLogsRequest{Date: "2025-01-01"})
@@ -246,38 +251,81 @@ c.Robot.GetCorpList(&types.GetCorpListRequest{})
 
 ```go
 c.History.GetRawMessages(&types.GetRawMessagesRequest{MessageID: "msg_1"})
-c.History.GetQALog(&types.GetQALogRequest{Name: "测试群"})
+c.History.GetEventCallbackLog(&types.GetEventCallbackLogRequest{Name: "测试群"})
 c.History.GetHistoryMessages(&types.GetHistoryRequest{Title: "仑哥"})
 ```
 
 ## 回调处理
 
-```go
-package main
+WorkTool 有两种回调协议，均在 `callback` 包中处理（`qa.go` / `event.go`）：
 
+| 类型 | 场景 | 配置 API | 解析 API |
+|------|------|----------|----------|
+| QA 消息回调 | 用户发消息 → 你回复 | `Robot.SetQACallback` | `callback.ParseQARequest` |
+| 事件回调 | 指令结果、上下线等 | `Robot.SetEventCallback` | `callback.NewEventParser` |
+
+### QA 消息回调
+
+WorkTool 将用户消息 POST 到你的 URL，需在 **3 秒内**响应。
+文档：[消息回调接口规范](https://doc.worktool.ymdyes.cn/doc-861677.md)
+
+```go
 import (
-    "fmt"
+    "io"
+    "net/http"
 
     "github.com/shanestevenlei/worktool-sdk-go/callback"
 )
 
-var parser = callback.NewParser("your_secret_key_if_encrypted")
-
-func handle(w http.ResponseWriter, r *http.Request) {
+func handleQA(w http.ResponseWriter, r *http.Request) {
     defer r.Body.Close()
     body, _ := io.ReadAll(r.Body)
 
-    cb, err := parser.Parse(body)
+    msg, err := callback.ParseQARequest(body)
     if err != nil {
         http.Error(w, "bad request", 400)
         return
     }
 
-    if cb.IsSuccess() {
-        fmt.Printf("指令执行成功: %s\n", cb.MessageID)
+    // 异步处理：先 QAAck，再调用 Message.SendText 回复
+    // 同步回复：QATextReply
+    resp := callback.QATextReply("收到：" + msg.Spoken)
+    data, _ := callback.MarshalQAResponse(resp)
+    w.Header().Set("Content-Type", "application/json")
+    w.Write(data)
+}
+```
+
+### 事件回调
+
+文档：[机器人回调接口标准](https://doc.worktool.ymdyes.cn/api-44952776.md)（type=1 为指令执行结果）
+
+```go
+import (
+    "fmt"
+    "io"
+    "net/http"
+
+    "github.com/shanestevenlei/worktool-sdk-go/callback"
+)
+
+var parser = callback.NewEventParser()
+
+func handleEvent(w http.ResponseWriter, r *http.Request) {
+    defer r.Body.Close()
+    body, _ := io.ReadAll(r.Body)
+
+    result, err := parser.Parse(body)
+    if err != nil {
+        http.Error(w, "bad request", 400)
+        return
+    }
+
+    if result.IsSuccess() {
+        fmt.Printf("指令执行成功: %s\n", result.MessageID)
     } else {
         fmt.Printf("指令失败: %s, code=%d, reason=%s\n",
-            cb.MessageID, cb.ErrorCode, cb.ErrorMessage())
+            result.MessageID, result.ErrorCode, result.ErrorMessage())
     }
 
     w.WriteHeader(200)
@@ -296,20 +344,20 @@ _, err := c.Message.SendText(&types.SendTextRequest{TitleList: []string{}})
 可用错误：`ErrEmptyRecipients`, `ErrEmptyContent`, `ErrEmptyObjectName`,
 `ErrEmptyFileURL`, `ErrEmptyGroupName`, `ErrEmptyPhone`, `ErrEmptyMessageID`,
 `ErrEmptyEnterpriseName`, `ErrEmptyCommandList`, `ErrEmptyFriendName`,
-`ErrEmptyForwardRecipients`, `ErrEmptyCallbackURL`, `ErrInvalidEncryptType`。
+`ErrEmptyForwardRecipients`, `ErrEmptyCallbackURL`。
 
-## 错误码常量（callback 包）
+## 错误码常量（事件回调）
 
 ```go
-callback.CodeSuccess           // 0
-callback.CodeIllegalData       // 101011
-callback.CodeCreateGroupFail   // 201011
-callback.CodeGroupAddFail      // 201013
-callback.CodeSendMsgFail       // 201102
-callback.CodeFileDownload      // 201107
+callback.EventCodeSuccess           // 0
+callback.EventCodeIllegalData       // 101011
+callback.EventCodeCreateGroupFail   // 201011
+callback.EventCodeGroupAddFail      // 201013
+callback.EventCodeSendMsgFail       // 201102
+callback.EventCodeFileDownload      // 201107
 
 // 中文错误信息
-callback.ErrorCodeMessages[code] // map[int]string
+callback.EventErrorCodeMessages[code] // map[int]string
 ```
 
 ## 测试
@@ -338,9 +386,12 @@ c := worktool.New(worktool.Config{
 ```
 worktool-sdk-go/
 ├── client.go                      # SDK 入口（无状态）
-├── callback/
-│   ├── callback.go                # 解析 + AES 解密 + 错误码
-│   └── callback_test.go
+├── callback/                      # 回调处理（QA + 事件）
+│   ├── doc.go                     # 包说明
+│   ├── qa.go                      # QA 消息回调
+│   ├── event.go                   # 事件回调
+│   ├── qa_test.go
+│   └── event_test.go
 ├── service/
 │   ├── service.go                 # HTTPClientFactory + 路径常量
 │   ├── message.go                 # 消息相关（25 个方法）
@@ -349,7 +400,9 @@ worktool-sdk-go/
 │   └── history.go                 # 历史查询（3 个方法）
 ├── types/
 │   ├── message.go                 # 请求/响应类型 + Validate
-│   ├── robot.go                   # 机器人类型 + Callback 类型
+│   ├── robot.go                   # 机器人类型 + 回调配置
+│   ├── eventcallback.go           # 事件回调 payload
+│   ├── qacallback.go              # QA 消息回调 payload
 │   ├── history.go                 # 查询请求 + 记录类型
 │   └── errors.go                  # SDK 错误定义
 └── internal/
@@ -361,8 +414,8 @@ worktool-sdk-go/
 ## 注意事项
 
 1. **QPM = 60**（每分钟 60 次）。建议使用 `BatchSend` 合并指令。
-2. **AES 加密**：robot 配置 `encryptType=1` 后，body 需 AES-256-CBC 加密（zero-IV, PKCS7）。
-3. **回调**：优先使用消息回调（`SetCallback`）而非轮询历史消息。
+2. **回调**：QA 与指令执行回调均为明文 `application/json`。
+3. **回调配置**：QA 用 `SetQACallback` + `callback.ParseQARequest`；事件用 `SetEventCallback` + `callback.NewEventParser`。
 4. **@所有人**：仅群主或群管理员可触发。
 5. **添加好友**：每天 ≤100 人次，新号勿用。
 

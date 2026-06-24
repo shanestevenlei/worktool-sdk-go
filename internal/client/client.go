@@ -20,10 +20,9 @@ import (
 // Config carries the connection parameters for a single request.
 // All fields are safe to set on every call; nothing is cached.
 type Config struct {
-	BaseURL    string
-	RobotID    string
-	SecretKey  string // AES key, empty = no encryption
-	HTTPDoer   HTTPDoer // optional: if set, replaces resty with this transport (used in tests)
+	BaseURL  string
+	RobotID  string
+	HTTPDoer HTTPDoer // optional: if set, replaces resty with this transport (used in tests)
 }
 
 // HTTPClient is a one-shot HTTP wrapper around resty.Client.

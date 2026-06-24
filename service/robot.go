@@ -43,16 +43,9 @@ func (s *RobotService) IsOnline() (*types.IsOnlineResponse, error) {
 	return &resp, err
 }
 
-// SetEncryption configures backend communication encryption.
-func (s *RobotService) SetEncryption(req *types.SetEncryptionRequest) (*types.SetEncryptionResponse, error) {
-	var resp types.SetEncryptionResponse
-	err := s.http().DoPOST("/robot/robotInfo/update", req, &resp)
-	return &resp, err
-}
-
-// SetCallback configures the message callback URL and reply strategy.
-func (s *RobotService) SetCallback(req *types.SetCallbackRequest) (*types.SetCallbackResponse, error) {
-	var resp types.SetCallbackResponse
+// SetQACallback configures the QA message callback URL and reply strategy.
+func (s *RobotService) SetQACallback(req *types.SetQACallbackRequest) (*types.SetQACallbackResponse, error) {
+	var resp types.SetQACallbackResponse
 	err := s.http().DoPOST("/robot/robotInfo/update", req, &resp)
 	return &resp, err
 }
@@ -91,49 +84,28 @@ func (s *RobotService) GetCorpList(req *types.GetCorpListRequest) (*types.CorpLi
 	return &resp, err
 }
 
-// BindCallback binds a callback of the given type to a URL.
-// type: 0=群二维码 1=指令结果 5=上线 6=下线.
-func (s *RobotService) BindCallback(req *types.BindCallbackRequest) (*types.APIResponse, error) {
+// SetEventCallback binds an event callback of the given type to a URL.
+func (s *RobotService) SetEventCallback(req *types.SetEventCallbackRequest) (*types.APIResponse, error) {
 	var resp types.APIResponse
 	err := s.http().DoPOST("/robot/robotInfo/callBack/bind", req, &resp)
 	return &resp, err
 }
 
-// ListCallbacks lists all callbacks configured for the robot.
-func (s *RobotService) ListCallbacks(req *types.ListCallbacksRequest) (*types.CallbackListResponse, error) {
+// ListEventCallbacks lists all event callbacks configured for the robot.
+func (s *RobotService) ListEventCallbacks(req *types.ListEventCallbacksRequest) (*types.EventCallbackListResponse, error) {
 	params := map[string]string{}
 	if req.RobotKey != "" {
 		params["robotKey"] = req.RobotKey
 	}
-	var resp types.CallbackListResponse
+	var resp types.EventCallbackListResponse
 	err := s.http().DoGET("/robot/robotInfo/callBack/get", params, &resp)
 	return &resp, err
 }
 
-// DeleteCallback removes a callback by type.
-func (s *RobotService) DeleteCallback(req *types.DeleteCallbackRequest) (*types.CallbackListResponse, error) {
-	var resp types.CallbackListResponse
+// DeleteEventCallback removes an event callback by type.
+func (s *RobotService) DeleteEventCallback(req *types.DeleteEventCallbackRequest) (*types.EventCallbackListResponse, error) {
+	var resp types.EventCallbackListResponse
 	err := s.http().DoPOST("/robot/robotInfo/callBack/deleteByType", req, &resp)
 	return &resp, err
 }
 
-// BindCallbackLegacy is the deprecated form of BindCallback (callBack/add).
-// Prefer BindCallback unless you specifically need the v1 shape.
-func (s *RobotService) BindCallbackLegacy(req *types.BindCallbackLegacyRequest) (*types.APIResponse, error) {
-	var resp types.APIResponse
-	err := s.http().DoPOST("/robot/robotInfo/callBack/add", req, &resp)
-	return &resp, err
-}
-
-// DeleteCallbackLegacy is the deprecated form of DeleteCallback (callBack/del).
-// Accepts a list of callback IDs. The body is sent as a raw JSON array
-// (e.g. [1, 2, 3]) — we serialize via ToJSON before POSTing.
-func (s *RobotService) DeleteCallbackLegacy(req *types.DeleteCallbackLegacyRequest) (*types.CallbackListResponse, error) {
-	body, err := req.ToJSON()
-	if err != nil {
-		return nil, err
-	}
-	var resp types.CallbackListResponse
-	err = s.http().DoPOSTRaw("/robot/robotInfo/callBack/del", body, &resp)
-	return &resp, err
-}

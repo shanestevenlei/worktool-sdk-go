@@ -225,43 +225,19 @@ func TestRobotService_GetInfo(t *testing.T) {
 	assert.Equal(t, "/robot/robotInfo/get", tr.calls[0].URL.Path)
 }
 
-func TestRobotService_SetEncryption(t *testing.T) {
+func TestRobotService_SetEventCallback(t *testing.T) {
 	tr := &captureTransport{respStatus: 200, respBody: successResp(0, "ok")}
 	svc := NewRobotService()
 	svc.SetHTTPFactory(&fakeFactory{transport: tr})
 
-	_, err := svc.SetEncryption(&types.SetEncryptionRequest{
-		SecretKey:   "16bytekey1234567",
-		EncryptType: 1,
-	})
-	assert.NoError(t, err)
-	assert.Equal(t, "/robot/robotInfo/update", tr.calls[0].URL.Path)
-	assert.Contains(t, tr.bodies[0], `"secretKey":"16bytekey1234567"`)
-	assert.Contains(t, tr.bodies[0], `"encryptType":1`)
-}
-
-func TestRobotService_BindCallback(t *testing.T) {
-	tr := &captureTransport{respStatus: 200, respBody: successResp(0, "ok")}
-	svc := NewRobotService()
-	svc.SetHTTPFactory(&fakeFactory{transport: tr})
-
-	_, err := svc.BindCallback(&types.BindCallbackRequest{
-		Type:        types.CallbackTypeCommandExec,
-		CallBackURL: "https://example.com/cb",
+	_, err := svc.SetEventCallback(&types.SetEventCallbackRequest{
+		Type:        types.EventCallbackTypeCommandExec,
+		CallBackURL: "https://example.com/command",
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, "/robot/robotInfo/callBack/bind", tr.calls[0].URL.Path)
-}
-
-func TestRobotService_DeleteCallbackLegacy(t *testing.T) {
-	tr := &captureTransport{respStatus: 200, respBody: successResp(0, "ok")}
-	svc := NewRobotService()
-	svc.SetHTTPFactory(&fakeFactory{transport: tr})
-
-	_, err := svc.DeleteCallbackLegacy(&types.DeleteCallbackLegacyRequest{IDs: []int64{1, 2, 3}})
-	assert.NoError(t, err)
-	assert.Equal(t, "/robot/robotInfo/callBack/del", tr.calls[0].URL.Path)
-	assert.Equal(t, "[1,2,3]", tr.bodies[0])
+	assert.Contains(t, tr.bodies[0], `"type":1`)
+	assert.Contains(t, tr.bodies[0], `"callBackUrl":"https://example.com/command"`)
 }
 
 func TestRobotService_GetLoginLogs(t *testing.T) {
@@ -295,12 +271,12 @@ func TestHistoryService_GetHistoryMessages(t *testing.T) {
 	assert.Equal(t, "20", tr.queryParams[0]["size"])
 }
 
-func TestHistoryService_GetQALog(t *testing.T) {
+func TestHistoryService_GetEventCallbackLog(t *testing.T) {
 	tr := &captureTransport{respStatus: 200, respBody: successResp(0, "ok")}
 	svc := NewHistoryService()
 	svc.SetHTTPFactory(&fakeFactory{transport: tr})
 
-	_, err := svc.GetQALog(&types.GetQALogRequest{Name: "测试群"})
+	_, err := svc.GetEventCallbackLog(&types.GetEventCallbackLogRequest{Name: "测试群"})
 	assert.NoError(t, err)
 	assert.Equal(t, "/robot/qaLog/list", tr.calls[0].URL.Path)
 	assert.Equal(t, "测试群", tr.queryParams[0]["name"])

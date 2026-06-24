@@ -15,5 +15,4 @@ var (
 	ErrEmptyFriendName       = errors.New("worktool: friend nickname cannot be empty")
 	ErrEmptyForwardRecipients = errors.New("worktool: forward nameList cannot be empty")
 	ErrEmptyCallbackURL      = errors.New("worktool: callbackUrl cannot be empty")
-	ErrInvalidEncryptType    = errors.New("worktool: invalid encryptType (0 or 1)")
 )

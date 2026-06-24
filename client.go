@@ -9,11 +9,9 @@ import (
 type Option func(*config)
 
 type config struct {
-	robotID     string
-	baseURL     string
-	secretKey   string
-	encryptType int // 0 = none, 1 = AES-256-CBC
-	httpDoer    client.HTTPDoer
+	robotID  string
+	baseURL  string
+	httpDoer client.HTTPDoer
 }
 
 // Client composes the various service interfaces. It holds NO HTTP state.
@@ -30,10 +28,6 @@ type Client struct {
 // New creates a client with the given options.
 //
 //	worktool.New(worktool.WithRobotID("your_robot_id"))
-//	worktool.New(
-//	    worktool.WithRobotID("robot_id"),
-//	    worktool.WithSecret("16bytekey1234567", 1),
-//	)
 func New(opts ...Option) *Client {
 	cfg := config{baseURL: client.DefaultBaseURL}
 	for _, opt := range opts {
@@ -63,15 +57,6 @@ func WithBaseURL(baseURL string) Option {
 	return func(c *config) { c.baseURL = baseURL }
 }
 
-// WithSecret enables AES encryption for callback payloads.
-// encryptType: 0 = none, 1 = AES-256-CBC.
-func WithSecret(secretKey string, encryptType int) Option {
-	return func(c *config) {
-		c.secretKey = secretKey
-		c.encryptType = encryptType
-	}
-}
-
 // WithHTTPDoer replaces the default HTTP transport (for tests).
 func WithHTTPDoer(doer client.HTTPDoer) Option {
 	return func(c *config) { c.httpDoer = doer }
@@ -84,9 +69,8 @@ func (c *Client) RobotID() string { return c.cfg.robotID }
 // Services call this on each invocation to avoid sharing state.
 func (c *Client) HTTPClient() *client.HTTPClient {
 	return client.New(client.Config{
-		BaseURL:   c.cfg.baseURL,
-		RobotID:   c.cfg.robotID,
-		SecretKey: c.cfg.secretKey,
-		HTTPDoer:  c.cfg.httpDoer,
+		BaseURL:  c.cfg.baseURL,
+		RobotID:  c.cfg.robotID,
+		HTTPDoer: c.cfg.httpDoer,
 	})
 }

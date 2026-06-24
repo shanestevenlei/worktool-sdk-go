@@ -25,11 +25,6 @@ func TestNew(t *testing.T) {
 		assert.NotNil(t, c.resty)
 	})
 
-	t.Run("with secret key", func(t *testing.T) {
-		c := New(Config{BaseURL: "https://example.com", RobotID: "r", SecretKey: "k"})
-		assert.Equal(t, "k", c.cfg.SecretKey)
-	})
-
 	t.Run("with custom transport", func(t *testing.T) {
 		called := false
 		transport := roundTripFunc(func(req *http.Request) (*http.Response, error) {
@@ -125,8 +120,8 @@ func TestHTTPClientDoGET(t *testing.T) {
 }
 
 func TestHTTPClientConfig(t *testing.T) {
-	c := New(Config{BaseURL: "https://x", RobotID: "r1", SecretKey: "s"})
+	c := New(Config{BaseURL: "https://x", RobotID: "r1"})
 	cfg := c.Config()
 	assert.Equal(t, "r1", cfg.RobotID)
-	assert.Equal(t, "s", cfg.SecretKey)
+	assert.Equal(t, "https://x", cfg.BaseURL)
 }

@@ -53,9 +53,9 @@ func (s *HistoryService) GetHistoryMessages(req *types.GetHistoryRequest) (*type
 	return &resp, err
 }
 
-// GetQALog retrieves callback log entries for the robot.
+// GetEventCallbackLog retrieves event callback log entries.
 // Path: GET /robot/qaLog/list
-func (s *HistoryService) GetQALog(req *types.GetQALogRequest) (*types.GetQALogResponse, error) {
+func (s *HistoryService) GetEventCallbackLog(req *types.GetEventCallbackLogRequest) (*types.GetEventCallbackLogResponse, error) {
 	params := map[string]string{}
 	if req.Name != "" {
 		params["name"] = req.Name
@@ -75,7 +75,7 @@ func (s *HistoryService) GetQALog(req *types.GetQALogRequest) (*types.GetQALogRe
 	if req.EndTime != "" {
 		params["endTime"] = req.EndTime
 	}
-	var resp types.GetQALogResponse
+	var resp types.GetEventCallbackLogResponse
 	err := s.http().DoGET("/robot/qaLog/list", params, &resp)
 	return &resp, err
 }

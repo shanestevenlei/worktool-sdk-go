@@ -47,46 +47,23 @@ type GetHistoryResponse struct {
 	Data *MessagePage `json:"data"`
 }
 
-// --- QA Log (Callback Log) ---
+// --- Event Callback Log ---
 
-// GetQALogRequest for querying callback log entries (GET, query params only).
-type GetQALogRequest struct {
-	Name      string `json:"name,omitempty"`     // filter by chat name
-	Page      string `json:"page,omitempty"`     // page number
-	Size      string `json:"size,omitempty"`     // page size
-	Sort      string `json:"sort,omitempty"`     // e.g. "start_time,desc"
-	StartTime string `json:"startTime,omitempty"` // "2006-01-02 15:04:05"
-	EndTime   string `json:"endTime,omitempty"` // "2006-01-02 15:04:05"
+// GetEventCallbackLogRequest queries event callback logs (GET).
+type GetEventCallbackLogRequest struct {
+	Name      string `json:"name,omitempty"`
+	Page      string `json:"page,omitempty"`
+	Size      string `json:"size,omitempty"`
+	Sort      string `json:"sort,omitempty"`
+	StartTime string `json:"startTime,omitempty"`
+	EndTime   string `json:"endTime,omitempty"`
 }
 
-// QALogRecord represents a single callback log entry.
-type QALogRecord struct {
-	ID         int64  `json:"id"`
-	MessageID   string `json:"messageId"`
-	ErrorCode   int    `json:"errorCode"`
-	ErrorReason string `json:"errorReason"`
-	RunTime     int64  `json:"runTime"`
-	TimeCost    float64 `json:"timeCost"`
-	Type        int    `json:"type"`
-	RawMsg      string `json:"rawMsg"`
-	SuccessList []string `json:"successList"`
-	FailList    []string `json:"failList"`
-	GroupName   string `json:"groupName"`
-	QRCode      string `json:"qrCode"`
-	CreateTime  string `json:"createTime"`
-}
-
-// GetQALogResponse is the response for GetQALog.
-type GetQALogResponse struct {
-	APIResponse
-}
-
-// --- Callback Request (received by user's server) ---
-
-// CallbackRequest is the payload WorkTool sends to your callback URL.
-type CallbackRequest struct {
+// EventCallbackLogRecord is a single event callback log entry.
+type EventCallbackLogRecord struct {
+	ID          int64    `json:"id"`
 	MessageID   string   `json:"messageId"`
-	ErrorCode   int      `json:"errorCode"` // 0=成功 其他=失败
+	ErrorCode   int      `json:"errorCode"`
 	ErrorReason string   `json:"errorReason"`
 	RunTime     int64    `json:"runTime"`
 	TimeCost    float64  `json:"timeCost"`
@@ -96,6 +73,12 @@ type CallbackRequest struct {
 	FailList    []string `json:"failList"`
 	GroupName   string   `json:"groupName"`
 	QRCode      string   `json:"qrCode"`
+	CreateTime  string   `json:"createTime"`
+}
+
+// GetEventCallbackLogResponse is the response for GetEventCallbackLog.
+type GetEventCallbackLogResponse struct {
+	APIResponse
 }
 
 // --- Command Log ---
