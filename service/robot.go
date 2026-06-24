@@ -1,0 +1,139 @@
+package service
+
+import (
+	"github.com/shanestevenlei/worktool-sdk-go/internal/client"
+	"github.com/shanestevenlei/worktool-sdk-go/types"
+)
+
+// RobotService handles robot configuration and management.
+// It carries no HTTP state; each method builds its own HTTP client
+// via the injected factory.
+type RobotService struct {
+	factory HTTPClientFactory
+}
+
+// NewRobotService creates a new RobotService.
+func NewRobotService() *RobotService {
+	return &RobotService{}
+}
+
+// SetHTTPFactory wires up the HTTP client factory.
+func (s *RobotService) SetHTTPFactory(f HTTPClientFactory) {
+	s.factory = f
+}
+
+// http returns a fresh HTTP client for the current request.
+func (s *RobotService) http() *client.HTTPClient {
+	return s.factory.HTTPClient()
+}
+
+// GetInfo returns the robot's configuration and status.
+// No request body required (GET).
+func (s *RobotService) GetInfo() (*types.GetRobotInfoResponse, error) {
+	var resp types.GetRobotInfoResponse
+	err := s.http().DoGET("/robot/robotInfo/get", nil, &resp)
+	return &resp, err
+}
+
+// IsOnline checks whether the robot client is currently online.
+// No request body required (GET).
+func (s *RobotService) IsOnline() (*types.IsOnlineResponse, error) {
+	var resp types.IsOnlineResponse
+	err := s.http().DoGET("/robot/robotInfo/online", nil, &resp)
+	return &resp, err
+}
+
+// SetEncryption configures backend communication encryption.
+func (s *RobotService) SetEncryption(req *types.SetEncryptionRequest) (*types.SetEncryptionResponse, error) {
+	var resp types.SetEncryptionResponse
+	err := s.http().DoPOST("/robot/robotInfo/update", req, &resp)
+	return &resp, err
+}
+
+// SetCallback configures the message callback URL and reply strategy.
+func (s *RobotService) SetCallback(req *types.SetCallbackRequest) (*types.SetCallbackResponse, error) {
+	var resp types.SetCallbackResponse
+	err := s.http().DoPOST("/robot/robotInfo/update", req, &resp)
+	return &resp, err
+}
+
+// GetGroupList returns the list of groups managed by this robot.
+// No request body required (GET).
+func (s *RobotService) GetGroupList() (*types.GetGroupListResponse, error) {
+	var resp types.GetGroupListResponse
+	err := s.http().DoGET("/robot/robotInfo/groupList", nil, &resp)
+	return &resp, err
+}
+
+// GetLoginLogs retrieves the robot's login history.
+// key: optional verification code; date: optional "yyyy-MM-dd" filter.
+func (s *RobotService) GetLoginLogs(req *types.GetLoginLogsRequest) (*types.LoginLogResponse, error) {
+	params := map[string]string{}
+	if req.Key != "" {
+		params["key"] = req.Key
+	}
+	if req.Date != "" {
+		params["date"] = req.Date
+	}
+	var resp types.LoginLogResponse
+	err := s.http().DoGET("/robot/robotInfo/onlineInfos", params, &resp)
+	return &resp, err
+}
+
+// GetCorpList retrieves the list of corporations available to this robot (custom integration).
+func (s *RobotService) GetCorpList(req *types.GetCorpListRequest) (*types.CorpListResponse, error) {
+	params := map[string]string{}
+	if req.Key != "" {
+		params["key"] = req.Key
+	}
+	var resp types.CorpListResponse
+	err := s.http().DoGET("/robot/robotInfo/corpList", params, &resp)
+	return &resp, err
+}
+
+// BindCallback binds a callback of the given type to a URL.
+// type: 0=群二维码 1=指令结果 5=上线 6=下线.
+func (s *RobotService) BindCallback(req *types.BindCallbackRequest) (*types.APIResponse, error) {
+	var resp types.APIResponse
+	err := s.http().DoPOST("/robot/robotInfo/callBack/bind", req, &resp)
+	return &resp, err
+}
+
+// ListCallbacks lists all callbacks configured for the robot.
+func (s *RobotService) ListCallbacks(req *types.ListCallbacksRequest) (*types.CallbackListResponse, error) {
+	params := map[string]string{}
+	if req.RobotKey != "" {
+		params["robotKey"] = req.RobotKey
+	}
+	var resp types.CallbackListResponse
+	err := s.http().DoGET("/robot/robotInfo/callBack/get", params, &resp)
+	return &resp, err
+}
+
+// DeleteCallback removes a callback by type.
+func (s *RobotService) DeleteCallback(req *types.DeleteCallbackRequest) (*types.CallbackListResponse, error) {
+	var resp types.CallbackListResponse
+	err := s.http().DoPOST("/robot/robotInfo/callBack/deleteByType", req, &resp)
+	return &resp, err
+}
+
+// BindCallbackLegacy is the deprecated form of BindCallback (callBack/add).
+// Prefer BindCallback unless you specifically need the v1 shape.
+func (s *RobotService) BindCallbackLegacy(req *types.BindCallbackLegacyRequest) (*types.APIResponse, error) {
+	var resp types.APIResponse
+	err := s.http().DoPOST("/robot/robotInfo/callBack/add", req, &resp)
+	return &resp, err
+}
+
+// DeleteCallbackLegacy is the deprecated form of DeleteCallback (callBack/del).
+// Accepts a list of callback IDs. The body is sent as a raw JSON array
+// (e.g. [1, 2, 3]) — we serialize via ToJSON before POSTing.
+func (s *RobotService) DeleteCallbackLegacy(req *types.DeleteCallbackLegacyRequest) (*types.CallbackListResponse, error) {
+	body, err := req.ToJSON()
+	if err != nil {
+		return nil, err
+	}
+	var resp types.CallbackListResponse
+	err = s.http().DoPOSTRaw("/robot/robotInfo/callBack/del", body, &resp)
+	return &resp, err
+}
