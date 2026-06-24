@@ -133,11 +133,11 @@ func TestMessageService_BatchSend(t *testing.T) {
 
 	_, err := svc.BatchSend(&types.BatchSendRequest{
 		List: []types.BatchItem{
-			{Type: 203, Payload: &types.SendTextRequest{
+			{Type: int(types.CmdTypeSendText), Payload: &types.SendTextRequest{
 				TitleList:       []string{"仑哥"},
 				ReceivedContent: "msg1",
 			}},
-			{Type: 206, Payload: &types.CreateGroupRequest{
+			{Type: int(types.CmdTypeCreateGroup), Payload: &types.CreateGroupRequest{
 				GroupName:  "g1",
 				SelectList: []string{"x"},
 			}},
@@ -165,7 +165,7 @@ func TestMessageService_ForwardMessage(t *testing.T) {
 		ReceivedName:    "甲仑",
 		OriginalContent: "美团",
 		NameList:        []string{"仑哥"},
-		TextType:        7,
+		TextType:        int(types.MessageTextTypeMiniProgram),
 	})
 	assert.NoError(t, err)
 	assert.Contains(t, tr.bodies[0], `"type":205`)
@@ -231,7 +231,7 @@ func TestRobotService_SetEventCallback(t *testing.T) {
 	svc.SetHTTPFactory(&fakeFactory{transport: tr})
 
 	_, err := svc.SetEventCallback(&types.SetEventCallbackRequest{
-		Type:        types.EventCallbackTypeCommandExec,
+		Type:        int(types.EventCallbackTypeCommandExec),
 		CallBackURL: "https://example.com/command",
 	})
 	assert.NoError(t, err)

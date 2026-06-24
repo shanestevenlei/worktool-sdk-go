@@ -27,10 +27,10 @@ func (s *MessageService) http() *client.HTTPClient {
 }
 
 // send is the shared helper for single-command /wework/sendRawMessage calls.
-func (s *MessageService) send(cmdType int, payload, resp interface{}) error {
+func (s *MessageService) send(cmdType types.CmdType, payload, resp interface{}) error {
 	body := &types.MessageRequest{
-		SocketType: 2,
-		List:       []types.MessageItem{{Type: cmdType, Payload: payload}},
+		SocketType: int(types.SocketTypeWork),
+		List:       []types.MessageItem{{Type: int(cmdType), Payload: payload}},
 	}
 	return s.http().DoPOST(sendRawMessagePath, body, resp)
 }
@@ -45,7 +45,7 @@ func (s *MessageService) SendText(req *types.SendTextRequest) (*types.SendMessag
 		return nil, err
 	}
 	var resp types.SendMessageResponse
-	err := s.send(203, req, &resp)
+	err := s.send(types.CmdTypeSendText, req, &resp)
 	return &resp, err
 }
 
@@ -61,7 +61,7 @@ func (s *MessageService) ForwardMessage(req *types.ForwardMessageRequest) (*type
 		return nil, err
 	}
 	var resp types.SendMessageResponse
-	err := s.send(205, req, &resp)
+	err := s.send(types.CmdTypeForwardMessage, req, &resp)
 	return &resp, err
 }
 
@@ -75,7 +75,7 @@ func (s *MessageService) SendImage(req *types.SendImageRequest) (*types.SendMess
 		return nil, err
 	}
 	var resp types.SendMessageResponse
-	err := s.send(218, req, &resp)
+	err := s.send(types.CmdTypeSendMedia, req, &resp)
 	return &resp, err
 }
 
@@ -85,7 +85,7 @@ func (s *MessageService) SendFile(req *types.SendFileRequest) (*types.SendMessag
 		return nil, err
 	}
 	var resp types.SendMessageResponse
-	err := s.send(218, req, &resp)
+	err := s.send(types.CmdTypeSendMedia, req, &resp)
 	return &resp, err
 }
 
@@ -106,7 +106,7 @@ func (s *MessageService) SendWeDriveImage(req *types.SendWeDriveRequest) (*types
 		return nil, err
 	}
 	var resp types.SendMessageResponse
-	err := s.send(208, req, &resp)
+	err := s.send(types.CmdTypeWeDriveImage, req, &resp)
 	return &resp, err
 }
 
@@ -116,7 +116,7 @@ func (s *MessageService) SendWeDriveFile(req *types.SendWeDriveRequest) (*types.
 		return nil, err
 	}
 	var resp types.SendMessageResponse
-	err := s.send(209, req, &resp)
+	err := s.send(types.CmdTypeWeDriveFile, req, &resp)
 	return &resp, err
 }
 
@@ -130,7 +130,7 @@ func (s *MessageService) SendTencentDoc(req *types.SendDocRequest) (*types.SendM
 		return nil, err
 	}
 	var resp types.SendMessageResponse
-	err := s.send(211, req, &resp)
+	err := s.send(types.CmdTypeSendTencentDoc, req, &resp)
 	return &resp, err
 }
 
@@ -149,14 +149,14 @@ func (s *MessageService) CreateGroup(req *types.CreateGroupRequest) (*types.Send
 		return nil, err
 	}
 	var resp types.SendMessageResponse
-	err := s.send(206, req, &resp)
+	err := s.send(types.CmdTypeCreateGroup, req, &resp)
 	return &resp, err
 }
 
 // UpdateGroup modifies group properties and membership (type=207).
 func (s *MessageService) UpdateGroup(req *types.UpdateGroupRequest) (*types.SendMessageResponse, error) {
 	var resp types.SendMessageResponse
-	err := s.send(207, req, &resp)
+	err := s.send(types.CmdTypeUpdateGroup, req, &resp)
 	return &resp, err
 }
 
@@ -167,7 +167,7 @@ func (s *MessageService) DissolveGroup(req *types.DissolveGroupRequest) (*types.
 		return nil, err
 	}
 	var resp types.SendMessageResponse
-	err := s.send(208, req, &resp)
+	err := s.send(types.CmdTypeDissolveGroup, req, &resp)
 	return &resp, err
 }
 
@@ -181,7 +181,7 @@ func (s *MessageService) AddFriendByPhone(req *types.AddFriendByPhoneRequest) (*
 		return nil, err
 	}
 	var resp types.SendMessageResponse
-	err := s.send(213, req, &resp)
+	err := s.send(types.CmdTypeAddFriendByPhone, req, &resp)
 	return &resp, err
 }
 
@@ -191,7 +191,7 @@ func (s *MessageService) ModifyFriend(req *types.ModifyFriendRequest) (*types.Se
 		return nil, err
 	}
 	var resp types.SendMessageResponse
-	err := s.send(214, req, &resp)
+	err := s.send(types.CmdTypeModifyFriend, req, &resp)
 	return &resp, err
 }
 
@@ -201,7 +201,7 @@ func (s *MessageService) AddFriendFromGroup(req *types.AddFriendFromGroupRequest
 		return nil, err
 	}
 	var resp types.SendMessageResponse
-	err := s.send(215, req, &resp)
+	err := s.send(types.CmdTypeAddFriendFromGroup, req, &resp)
 	return &resp, err
 }
 
@@ -211,7 +211,7 @@ func (s *MessageService) DeleteContact(req *types.DeleteContactRequest) (*types.
 		return nil, err
 	}
 	var resp types.SendMessageResponse
-	err := s.send(217, req, &resp)
+	err := s.send(types.CmdTypeDeleteContact, req, &resp)
 	return &resp, err
 }
 
@@ -221,7 +221,7 @@ func (s *MessageService) ModifyGroupMemberRemark(req *types.ModifyGroupMemberRem
 		return nil, err
 	}
 	var resp types.SendMessageResponse
-	err := s.send(219, req, &resp)
+	err := s.send(types.CmdTypeModifyGroupMemberRemark, req, &resp)
 	return &resp, err
 }
 
@@ -235,21 +235,21 @@ func (s *MessageService) RecallMessage(req *types.RecallMessageRequest) (*types.
 		return nil, err
 	}
 	var resp types.SendMessageResponse
-	err := s.send(216, req, &resp)
+	err := s.send(types.CmdTypeRecallMessage, req, &resp)
 	return &resp, err
 }
 
 // AddTodo creates a todo/reminder item (type=221).
 func (s *MessageService) AddTodo(req *types.AddTodoRequest) (*types.SendMessageResponse, error) {
 	var resp types.SendMessageResponse
-	err := s.send(221, req, &resp)
+	err := s.send(types.CmdTypeAddTodo, req, &resp)
 	return &resp, err
 }
 
 // InsertCommand inserts a command at the front of the queue (type=222).
 func (s *MessageService) InsertCommand(req *types.InsertCommandRequest) (*types.SendMessageResponse, error) {
 	var resp types.SendMessageResponse
-	err := s.send(222, req, &resp)
+	err := s.send(types.CmdTypeInsertCommand, req, &resp)
 	return &resp, err
 }
 
@@ -259,28 +259,28 @@ func (s *MessageService) ClearSpecificCommand(req *types.ClearSpecificCommandReq
 		return nil, err
 	}
 	var resp types.SendMessageResponse
-	err := s.send(223, req, &resp)
+	err := s.send(types.CmdTypeClearSpecificCommand, req, &resp)
 	return &resp, err
 }
 
 // ClearCommands clears all pending client commands (type=224).
 func (s *MessageService) ClearCommands(req *types.ClearCommandsRequest) (*types.SendMessageResponse, error) {
 	var resp types.SendMessageResponse
-	err := s.send(224, req, &resp)
+	err := s.send(types.CmdTypeClearCommands, req, &resp)
 	return &resp, err
 }
 
 // SwitchEnterprise switches the robot's enterprise to the target (type=225).
 func (s *MessageService) SwitchEnterprise(req *types.SwitchEnterpriseRequest) (*types.SendMessageResponse, error) {
 	var resp types.SendMessageResponse
-	err := s.send(225, req, &resp)
+	err := s.send(types.CmdTypeSwitchEnterprise, req, &resp)
 	return &resp, err
 }
 
 // CleanupStorage cleans up WeChat storage (cache + resource files) (type=226).
 func (s *MessageService) CleanupStorage(req *types.CleanupStorageRequest) (*types.SendMessageResponse, error) {
 	var resp types.SendMessageResponse
-	err := s.send(226, req, &resp)
+	err := s.send(types.CmdTypeCleanupStorage, req, &resp)
 	return &resp, err
 }
 
@@ -291,14 +291,14 @@ func (s *MessageService) CleanupStorage(req *types.CleanupStorageRequest) (*type
 // SendLink sends a custom-styled link card (type=302, requires paid authorization).
 func (s *MessageService) SendLink(req *types.SendLinkRequest) (*types.SendMessageResponse, error) {
 	var resp types.SendMessageResponse
-	err := s.send(302, req, &resp)
+	err := s.send(types.CmdTypeSendLink, req, &resp)
 	return &resp, err
 }
 
 // SendMiniProgram sends a custom-styled mini-program card (type=303, requires paid authorization).
 func (s *MessageService) SendMiniProgram(req *types.SendMiniProgramRequest) (*types.SendMessageResponse, error) {
 	var resp types.SendMessageResponse
-	err := s.send(303, req, &resp)
+	err := s.send(types.CmdTypeSendMiniProgram, req, &resp)
 	return &resp, err
 }
 
@@ -312,7 +312,7 @@ func (s *MessageService) BatchSend(req *types.BatchSendRequest) (*types.SendMess
 		return nil, err
 	}
 	body := &types.MessageRequest{
-		SocketType: 2,
+		SocketType: int(types.SocketTypeWork),
 		List:       toMessageItems(req.List),
 	}
 	var resp types.SendMessageResponse

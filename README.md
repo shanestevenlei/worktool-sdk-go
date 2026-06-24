@@ -83,7 +83,7 @@ worktool.Client               (stateless facade)
 c.Message.SendText(&types.SendTextRequest{
     TitleList:       []string{"仑哥"},
     ReceivedContent: "你好",
-    AtList:          []string{"@所有人"},
+    AtList:          []string{types.AtEveryone},
 })
 ```
 
@@ -102,7 +102,7 @@ c.Message.SendFile(&types.SendFileRequest{
     TitleList:  []string{"仑哥"},
     ObjectName: "report.pdf",
     FileURL:    "https://example.com/report.pdf",
-    FileType:   "*", // image / audio / video / *
+    FileType:   string(types.MediaFileTypeAny),
 })
 
 // 微盘文件 / 图片
@@ -127,7 +127,7 @@ c.Message.ForwardMessage(&types.ForwardMessageRequest{
     ReceivedName:    "原始发送人昵称",
     OriginalContent: "原始内容",
     NameList:        []string{"仑哥"},
-    TextType:        7, // 0=未知 1=文本 2=图片 5=视频 7=小程序 8=链接 9=文件
+    TextType:        int(types.MessageTextTypeMiniProgram),
 })
 
 // 自定义链接/小程序（付费）
@@ -199,13 +199,13 @@ c.Message.CleanupStorage(&types.CleanupStorageRequest{})
 ```go
 c.Message.BatchSend(&types.BatchSendRequest{
     List: []types.BatchItem{
-        {Type: 203, Payload: &types.SendTextRequest{
+        {Type: int(types.CmdTypeSendText), Payload: &types.SendTextRequest{
             TitleList: []string{"仑哥"}, ReceivedContent: "第一条",
         }},
-        {Type: 206, Payload: &types.CreateGroupRequest{
+        {Type: int(types.CmdTypeCreateGroup), Payload: &types.CreateGroupRequest{
             GroupName: "新群", SelectList: []string{"仑哥"},
         }},
-        {Type: 218, Payload: &types.SendImageRequest{
+        {Type: int(types.CmdTypeSendMedia), Payload: &types.SendImageRequest{
             TitleList: []string{"仑哥"}, ObjectName: "x.png", FileURL: "https://x.png",
         }},
     },
@@ -221,24 +221,24 @@ c.Robot.IsOnline()
 
 // QA 消息回调（用户发消息 → 你的服务回复）
 c.Robot.SetQACallback(&types.SetQACallbackRequest{
-    OpenCallback: 1,
+    OpenCallback: int(types.OpenCallbackEnabled),
     CallbackURL:  "https://your-server.com/qa",
-    ReplyAll:     "1",
+    ReplyAll:     string(types.ReplyAllStrategyEnabled),
 })
 
 // 事件回调（指令结果、群二维码、上下线等）
 c.Robot.SetEventCallback(&types.SetEventCallbackRequest{
-    Type:        types.EventCallbackTypeCommandExec,
+    Type:        int(types.EventCallbackTypeCommandExec),
     CallBackURL: "https://your-server.com/event",
 })
 c.Robot.ListEventCallbacks(&types.ListEventCallbacksRequest{})
 c.Robot.DeleteEventCallback(&types.DeleteEventCallbackRequest{
-    Type: types.EventCallbackTypeCommandExec,
+    Type: int(types.EventCallbackTypeCommandExec),
 })
 
 // 其它事件类型示例
 c.Robot.SetEventCallback(&types.SetEventCallbackRequest{
-    Type:        types.EventCallbackTypeOnline,
+    Type:        int(types.EventCallbackTypeOnline),
     CallBackURL: "https://your-server.com/online",
 })
 

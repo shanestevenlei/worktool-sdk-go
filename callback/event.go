@@ -35,41 +35,44 @@ type EventResult struct {
 
 // IsSuccess returns true if the event indicates successful command execution.
 func (r *EventResult) IsSuccess() bool {
-	return r.ErrorCode == EventCodeSuccess
+	return r.ErrorCode == int(EventCodeSuccess)
 }
 
 // ErrorMessage returns a human-readable message for ErrorCode, or ErrorReason if unknown.
 func (r *EventResult) ErrorMessage() string {
-	if msg, ok := EventErrorCodeMessages[r.ErrorCode]; ok {
+	if msg, ok := EventErrorCodeMessages[EventErrorCode(r.ErrorCode)]; ok {
 		return msg
 	}
 	return r.ErrorReason
 }
 
-const (
-	EventCodeSuccess           = 0
-	EventCodeIllegalData       = 101011
-	EventCodeIllegalOperation  = 101012
-	EventCodeIllegalPermission = 101013
+// EventErrorCode 事件回调 errorCode 取值（指令执行结果，type=1）。
+type EventErrorCode int
 
-	EventCodeCreateGroupFail   = 201011
-	EventCodeGroupRenameFail   = 201012
-	EventCodeGroupAddFail      = 201013
-	EventCodeGroupRemoveFail   = 201014
-	EventCodeGroupAnnounceFail = 201015
-	EventCodeGroupRemarkFail   = 201016
-	EventCodeIntoRoomFail      = 201101
-	EventCodeSendMsgFail       = 201102
-	EventCodeButtonFail        = 201103
-	EventCodeTargetFail        = 201104
-	EventCodeRelayFail         = 201105
-	EventCodeRepeat            = 201106
-	EventCodeFileDownload      = 201107
-	EventCodeFileStorage       = 201108
+const (
+	EventCodeSuccess           EventErrorCode = 0
+	EventCodeIllegalData       EventErrorCode = 101011
+	EventCodeIllegalOperation  EventErrorCode = 101012
+	EventCodeIllegalPermission EventErrorCode = 101013
+
+	EventCodeCreateGroupFail   EventErrorCode = 201011
+	EventCodeGroupRenameFail   EventErrorCode = 201012
+	EventCodeGroupAddFail      EventErrorCode = 201013
+	EventCodeGroupRemoveFail   EventErrorCode = 201014
+	EventCodeGroupAnnounceFail EventErrorCode = 201015
+	EventCodeGroupRemarkFail   EventErrorCode = 201016
+	EventCodeIntoRoomFail      EventErrorCode = 201101
+	EventCodeSendMsgFail       EventErrorCode = 201102
+	EventCodeButtonFail        EventErrorCode = 201103
+	EventCodeTargetFail        EventErrorCode = 201104
+	EventCodeRelayFail         EventErrorCode = 201105
+	EventCodeRepeat            EventErrorCode = 201106
+	EventCodeFileDownload      EventErrorCode = 201107
+	EventCodeFileStorage       EventErrorCode = 201108
 )
 
 // EventErrorCodeMessages maps an event callback error code to a description.
-var EventErrorCodeMessages = map[int]string{
+var EventErrorCodeMessages = map[EventErrorCode]string{
 	EventCodeSuccess:           "success",
 	EventCodeIllegalData:       "非法数据",
 	EventCodeIllegalOperation:  "非法操作",

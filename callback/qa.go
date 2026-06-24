@@ -7,37 +7,7 @@ import (
 	"github.com/shanestevenlei/worktool-sdk-go/types"
 )
 
-// QA room type values in types.QARequest.RoomType.
-const (
-	QARoomTypeExternalGroup   = 1
-	QARoomTypeExternalContact = 2
-	QARoomTypeInternalGroup   = 3
-	QARoomTypeInternalContact = 4
-)
-
-// QA message text type values in types.QARequest.TextType.
-const (
-	QATextTypeUnknown      = 0
-	QATextTypeText         = 1
-	QATextTypeImage        = 2
-	QATextTypeVoice        = 3
-	QATextTypeVideo        = 5
-	QATextTypeMiniProgram  = 7
-	QATextTypeLink         = 8
-	QATextTypeFile         = 9
-	QATextTypeMergedRecord = 13
-	QATextTypeReplyText    = 15
-)
-
-// QAReplyTypeText is the synchronous text reply type in QAResponse.Data.
-const QAReplyTypeText = 5000
-
-const (
-	qaCodeSuccess = 0
-	qaCodeFailure = -1
-)
-
-// ParseQARequest decodes a QA message callback request body.
+// ParseQARequest decodes a QA callback request body.
 func ParseQARequest(data []byte) (*QAMessage, error) {
 	var raw types.QARequest
 	if err := json.Unmarshal(data, &raw); err != nil {
@@ -62,21 +32,21 @@ func (m *QAMessage) IsAtMe() bool {
 
 // QAAck returns a successful QA response without synchronous reply content.
 func QAAck(message string) *types.QAResponse {
-	return &types.QAResponse{Code: qaCodeSuccess, Message: message}
+	return &types.QAResponse{Code: int(types.QAResponseCodeSuccess), Message: message}
 }
 
 // QAFail returns a failed QA response.
 func QAFail(message string) *types.QAResponse {
-	return &types.QAResponse{Code: qaCodeFailure, Message: message}
+	return &types.QAResponse{Code: int(types.QAResponseCodeFailure), Message: message}
 }
 
 // QATextReply returns a successful QA response with synchronous text reply.
 func QATextReply(text string) *types.QAResponse {
 	return &types.QAResponse{
-		Code:    qaCodeSuccess,
+		Code:    int(types.QAResponseCodeSuccess),
 		Message: "success",
 		Data: &types.QAReplyData{
-			Type: QAReplyTypeText,
+			Type: int(types.QAReplyTypeText),
 			Info: types.QAReplyInfo{Text: text},
 		},
 	}
