@@ -88,6 +88,8 @@ func TestMessageService_SendText(t *testing.T) {
 	assert.Contains(t, tr.bodies[0], `"type":203`)
 	assert.Contains(t, tr.bodies[0], `"titleList":["仑哥"]`)
 	assert.Contains(t, tr.bodies[0], `"receivedContent":"你好"`)
+	assert.NotContains(t, tr.bodies[0], "Payload")
+	assert.NotContains(t, tr.bodies[0], "payload")
 }
 
 func TestMessageService_SendText_Validation(t *testing.T) {
@@ -146,6 +148,8 @@ func TestMessageService_BatchSend(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Contains(t, tr.bodies[0], `"type":203`)
 	assert.Contains(t, tr.bodies[0], `"type":206`)
+	assert.NotContains(t, tr.bodies[0], "Payload")
+	assert.NotContains(t, tr.bodies[0], "payload")
 }
 
 func TestMessageService_BatchSend_Empty(t *testing.T) {

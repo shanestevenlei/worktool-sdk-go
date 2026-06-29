@@ -1,5 +1,7 @@
 package types
 
+import "encoding/json"
+
 // APIResponse is the standard WorkTool API response wrapper.
 type APIResponse struct {
 	Code    int         `json:"code"`
@@ -17,7 +19,7 @@ type SocketType int
 
 const SocketTypeWork SocketType = 2
 
-// CmdType /wework/sendRawMessage 指令类型（MessageItem.Type）。
+// CmdType /wework/sendRawMessage 指令类型（BatchItem.Type）。
 type CmdType int
 
 const (
@@ -284,24 +286,44 @@ func (r *BatchSendRequest) Validate() error {
 	return nil
 }
 
-// BatchItem is a single command in a batch.
-// Payload is the concrete request struct (e.g. *SendTextRequest, *CreateGroupRequest).
+// BatchItem is a single command in /wework/sendRawMessage list (max 100 per batch).
+//
+// Type 与 Payload 在序列化时会合并为同一 JSON 对象（官方格式：type + 各指令字段平铺），
+// 不会出现 payload 包装字段。Payload 为具体请求体，如 *SendTextRequest、*CreateGroupRequest。
 type BatchItem struct {
-	Type    int         `json:"type"`
-	Payload interface{} `json:"payload"`
+	Type    int         `json:"-"`
+	Payload interface{} `json:"-"`
+}
+
+// MarshalJSON implements the official list item format: {"type":203,"titleList":[...],...}
+func (b BatchItem) MarshalJSON() ([]byte, error) {
+	return marshalCommandItem(b.Type, b.Payload)
 }
 
 // MessageRequest is the top-level request wrapper for /wework/sendRawMessage.
-// All command types share this same envelope.
 type MessageRequest struct {
-	SocketType int           `json:"socketType"` // 固定为 2，见 SocketTypeWork
-	List       []MessageItem `json:"list"`
+	SocketType int         `json:"socketType"` // 固定为 2，见 SocketTypeWork
+	List       []BatchItem `json:"list"`
 }
 
-// MessageItem is a single command inside a MessageRequest.
-type MessageItem struct {
-	Type    int         `json:"type"`
-	Payload interface{} `json:",inline"` // one of *SendTextRequest, *CreateGroupRequest, etc.
+func marshalCommandItem(cmdType int, payload interface{}) ([]byte, error) {
+	if payload == nil {
+		return nil, ErrEmptyPayload
+	}
+	payloadJSON, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(payloadJSON, &fields); err != nil {
+		return nil, err
+	}
+	typeJSON, err := json.Marshal(cmdType)
+	if err != nil {
+		return nil, err
+	}
+	fields["type"] = typeJSON
+	return json.Marshal(fields)
 }
 
 // ============================================================================

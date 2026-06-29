@@ -30,7 +30,7 @@ func (s *MessageService) http() *client.HTTPClient {
 func (s *MessageService) send(cmdType types.CmdType, payload, resp interface{}) error {
 	body := &types.MessageRequest{
 		SocketType: int(types.SocketTypeWork),
-		List:       []types.MessageItem{{Type: int(cmdType), Payload: payload}},
+		List:       []types.BatchItem{{Type: int(cmdType), Payload: payload}},
 	}
 	return s.http().DoPOST(sendRawMessagePath, body, resp)
 }
@@ -313,20 +313,11 @@ func (s *MessageService) BatchSend(req *types.BatchSendRequest) (*types.SendMess
 	}
 	body := &types.MessageRequest{
 		SocketType: int(types.SocketTypeWork),
-		List:       toMessageItems(req.List),
+		List:       req.List,
 	}
 	var resp types.SendMessageResponse
 	err := s.http().DoPOST(sendRawMessagePath, body, &resp)
 	return &resp, err
-}
-
-// toMessageItems converts BatchItem list to the generic MessageItem list.
-func toMessageItems(items []types.BatchItem) []types.MessageItem {
-	result := make([]types.MessageItem, len(items))
-	for i, item := range items {
-		result[i] = types.MessageItem{Type: item.Type, Payload: item.Payload}
-	}
-	return result
 }
 
 // =============================================================================

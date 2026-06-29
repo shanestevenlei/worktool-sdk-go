@@ -12,6 +12,7 @@ var (
 	ErrEmptyMessageID        = errors.New("worktool: messageId cannot be empty")
 	ErrEmptyEnterpriseName   = errors.New("worktool: enterpriseName cannot be empty")
 	ErrEmptyCommandList      = errors.New("worktool: command list cannot be empty")
+	ErrEmptyPayload          = errors.New("worktool: command payload cannot be nil")
 	ErrEmptyFriendName       = errors.New("worktool: friend nickname cannot be empty")
 	ErrEmptyForwardRecipients = errors.New("worktool: forward nameList cannot be empty")
 	ErrEmptyCallbackURL      = errors.New("worktool: callbackUrl cannot be empty")
